@@ -18,3 +18,12 @@ class Reservation(SQLModel, table=True):
     customer_name: str
     start_date: date
     end_date: date
+
+
+class ReservationCreate(SQLModel):
+    vehicle_id: int
+    customer_name: str
+    driver_license_number: str
+    driver_license_expiry: date
+    start_date: date
+    end_date: date
