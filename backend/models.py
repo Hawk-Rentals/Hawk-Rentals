@@ -1,6 +1,7 @@
 from datetime import date
 from typing import Literal
 
+from pydantic import ConfigDict, field_validator
 from sqlmodel import Field, SQLModel
 
 VehicleStatus = Literal["available", "booked", "unavailable"]
@@ -13,6 +14,43 @@ class Vehicle(SQLModel, table=True):
     category: str
     daily_rate: float
     available: bool = True
+    archived: bool = False
+
+
+class VehicleCreate(SQLModel):
+    make: str
+    model: str
+    category: str
+    daily_rate: float = Field(gt=0)
+    available: bool = True
+
+    @field_validator("make", "model", "category")
+    @classmethod
+    def nonempty(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Field cannot be blank")
+        return value
+
+
+class VehicleUpdate(SQLModel):
+    model_config = ConfigDict(extra="forbid")
+
+    make: str | None = None
+    model: str | None = None
+    category: str | None = None
+    daily_rate: float | None = Field(default=None, gt=0)
+    available: bool | None = None
+
+    @field_validator("make", "model", "category")
+    @classmethod
+    def nonempty_if_provided(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            raise ValueError("Field cannot be blank")
+        return value
 
 
 class VehicleAvailability(SQLModel):
