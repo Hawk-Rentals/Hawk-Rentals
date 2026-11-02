@@ -16,7 +16,8 @@ def client(monkeypatch):
     )
     SQLModel.metadata.create_all(test_engine)
     monkeypatch.setattr(main, "engine", test_engine)
-    with TestClient(main.app) as test_client:
+    monkeypatch.setenv("STAFF_API_KEY", "test-staff-key")
+    with TestClient(main.app, headers={"X-Staff-Key": "test-staff-key"}) as test_client:
         yield test_client, test_engine
     test_engine.dispose()
 
@@ -95,4 +96,3 @@ def test_archived_vehicle_cannot_be_reserved(client):
         "end_date": "2027-01-03",
     })
     assert result.status_code == 409
-
