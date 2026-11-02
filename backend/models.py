@@ -1,6 +1,9 @@
 from datetime import date
+from typing import Literal
 
 from sqlmodel import Field, SQLModel
+
+VehicleStatus = Literal["available", "booked", "unavailable"]
 
 
 class Vehicle(SQLModel, table=True):
@@ -10,6 +13,16 @@ class Vehicle(SQLModel, table=True):
     category: str
     daily_rate: float
     available: bool = True
+
+
+class VehicleAvailability(SQLModel):
+    id: int
+    make: str
+    model: str
+    category: str
+    daily_rate: float
+    available: bool
+    status: VehicleStatus
 
 
 class Reservation(SQLModel, table=True):
