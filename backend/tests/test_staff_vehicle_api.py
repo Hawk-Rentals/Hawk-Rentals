@@ -96,4 +96,3 @@ def test_archived_vehicle_cannot_be_reserved(client):
         "end_date": "2027-01-03",
     })
     assert result.status_code == 409
-}
