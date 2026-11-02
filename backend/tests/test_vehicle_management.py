@@ -26,6 +26,8 @@ def test_initial_fleet_is_seeded_once_and_visible_in_catalog(client):
     vehicles = client.get("/vehicles").json()
     assert len(vehicles) >= 4
     assert {vehicle["make"] for vehicle in vehicles} >= {"Toyota", "Honda", "Ford"}
+    main.seed_initial_vehicles()
+    assert len(client.get("/vehicles").json()) == len(vehicles)
 
 
 def test_staff_credentials_required_for_vehicle_changes(client):
