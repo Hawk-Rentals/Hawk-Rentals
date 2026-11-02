@@ -13,6 +13,8 @@ def client(tmp_path, monkeypatch):
         f"sqlite:///{tmp_path / 'test.db'}", connect_args={"check_same_thread": False}
     )
     monkeypatch.setattr(main, "engine", engine)
+    monkeypatch.setattr(main, "INITIAL_VEHICLES", [])
+    monkeypatch.setenv("STAFF_API_KEY", "test-staff-key")
     with TestClient(main.app) as test_client:
         yield test_client
     engine.dispose()
@@ -28,6 +30,7 @@ def dates():
 def add_vehicle(client, model="Corolla", category="compact", available=True):
     response = client.post(
         "/vehicles",
+        headers={"X-Staff-Key": "test-staff-key"},
         json={
             "make": "Toyota",
             "model": model,

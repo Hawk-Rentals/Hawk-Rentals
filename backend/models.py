@@ -60,6 +60,7 @@ class VehicleAvailability(SQLModel):
     category: str
     daily_rate: float
     available: bool
+    archived: bool
     status: VehicleStatus
 
 

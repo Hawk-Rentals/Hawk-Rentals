@@ -1,7 +1,9 @@
+import os
+import secrets
 from contextlib import asynccontextmanager
 from datetime import date, timedelta
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlmodel import Session, SQLModel, create_engine, select
@@ -20,10 +22,26 @@ engine = create_engine(
     "sqlite:///hawkdrive.db", connect_args={"check_same_thread": False, "timeout": 10}
 )
 
+INITIAL_VEHICLES = [
+    {"make": "Toyota", "model": "Corolla", "category": "compact", "daily_rate": 55.0},
+    {"make": "Honda", "model": "Civic", "category": "compact", "daily_rate": 60.0},
+    {"make": "Toyota", "model": "RAV4", "category": "suv", "daily_rate": 85.0},
+    {"make": "Ford", "model": "Mustang", "category": "sports", "daily_rate": 120.0},
+]
+
+
+def seed_initial_vehicles() -> None:
+    """Insert the starter fleet once, without overwriting existing staff changes."""
+    with Session(engine) as session:
+        if session.exec(select(Vehicle.id)).first() is None:
+            session.add_all(Vehicle(**vehicle) for vehicle in INITIAL_VEHICLES)
+            session.commit()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     SQLModel.metadata.create_all(engine)
+    seed_initial_vehicles()
     yield
 
 
@@ -31,9 +49,17 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
-    allow_methods=["GET", "POST", "PATCH", "PUT"],
-    allow_headers=["Content-Type"],
+    allow_methods=["GET", "POST", "PATCH", "PUT", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Staff-Key"],
 )
+
+
+def require_staff(x_staff_key: str | None = Header(default=None, alias="X-Staff-Key")) -> None:
+    configured_key = os.getenv("STAFF_API_KEY")
+    if not configured_key:
+        raise HTTPException(status_code=503, detail="Staff access is not configured")
+    if not x_staff_key or not secrets.compare_digest(x_staff_key, configured_key):
+        raise HTTPException(status_code=401, detail="Valid staff credentials are required")
 
 
 @app.get("/health")
@@ -85,7 +111,7 @@ def get_vehicles(
     return results
 
 
-@app.post("/vehicles", response_model=Vehicle)
+@app.post("/vehicles", response_model=Vehicle, dependencies=[Depends(require_staff)])
 def create_vehicle(request: VehicleCreate):
     with Session(engine) as session:
         vehicle = Vehicle(**request.model_dump())
@@ -95,7 +121,11 @@ def create_vehicle(request: VehicleCreate):
         return vehicle
 
 
-@app.patch("/vehicles/{vehicle_id}", response_model=Vehicle)
+@app.patch(
+    "/vehicles/{vehicle_id}",
+    response_model=Vehicle,
+    dependencies=[Depends(require_staff)],
+)
 def edit_vehicle(vehicle_id: int, request: VehicleUpdate):
     updates = request.model_dump(exclude_unset=True)
     if not updates or any(value is None for value in updates.values()):
@@ -113,7 +143,11 @@ def edit_vehicle(vehicle_id: int, request: VehicleUpdate):
         return vehicle
 
 
-@app.patch("/vehicles/{vehicle_id}/archive", response_model=Vehicle)
+@app.patch(
+    "/vehicles/{vehicle_id}/archive",
+    response_model=Vehicle,
+    dependencies=[Depends(require_staff)],
+)
 def archive_vehicle(vehicle_id: int):
     with Session(engine) as session:
         vehicle = session.get(Vehicle, vehicle_id)
