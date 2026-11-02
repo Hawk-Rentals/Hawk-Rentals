@@ -1,13 +1,22 @@
 import os
 import secrets
 from contextlib import asynccontextmanager
+from datetime import date, timedelta
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlmodel import Session, SQLModel, create_engine, select
 
-from models import Reservation, ReservationCreate, Vehicle, VehicleCreate, VehicleUpdate
+from models import (
+    Reservation,
+    ReservationCreate,
+    Vehicle,
+    VehicleAvailability,
+    VehicleCreate,
+    VehicleStatus,
+    VehicleUpdate,
+)
 
 engine = create_engine(
     "sqlite:///hawkdrive.db", connect_args={"check_same_thread": False, "timeout": 10}
@@ -58,14 +67,48 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/vehicles", response_model=list[Vehicle])
-def get_vehicles(category: str | None = None):
+@app.get("/vehicles", response_model=list[VehicleAvailability])
+def get_vehicles(
+    category: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    status: VehicleStatus | None = None,
+):
+    # Without dates, report each vehicle's status for today.
+    if (start_date is None) != (end_date is None):
+        raise HTTPException(status_code=400, detail="Pickup and return dates must be given together")
+    if start_date is None:
+        start_date = date.today()
+        end_date = start_date + timedelta(days=1)
+    elif start_date >= end_date:
+        raise HTTPException(status_code=400, detail="Return date must be after pickup date")
+
     with Session(engine) as session:
         # Archived vehicles remain in the DB for existing reservations/auditing.
         query = select(Vehicle).where(Vehicle.archived == False)  # noqa: E712
         if category:
             query = query.where(Vehicle.category == category)
-        return session.exec(query).all()
+        vehicles = session.exec(query).all()
+        booked_ids = set(
+            session.exec(
+                select(Reservation.vehicle_id).where(
+                    Reservation.start_date < end_date,
+                    Reservation.end_date > start_date,
+                )
+            ).all()
+        )
+
+    results = []
+    for vehicle in vehicles:
+        if not vehicle.available:
+            vehicle_status = "unavailable"
+        elif vehicle.id in booked_ids:
+            vehicle_status = "booked"
+        else:
+            vehicle_status = "available"
+        if status is None or vehicle_status == status:
+            results.append(VehicleAvailability(**vehicle.model_dump(), status=vehicle_status))
+    return results
 
 
 @app.post("/vehicles", response_model=Vehicle, dependencies=[Depends(require_staff)])

@@ -2,6 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 
+import AvailabilityFilter from "./AvailabilityFilter";
+
 type Vehicle = {
   id: number;
   make: string;
@@ -77,6 +79,7 @@ export default function Home() {
   return (
     <main>
       <h1>Hawk Rentals</h1>
+      <AvailabilityFilter />
       <h2>Reserve a vehicle</h2>
       <form onSubmit={reserve}>
         <p>
