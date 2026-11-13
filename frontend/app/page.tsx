@@ -78,10 +78,17 @@ export default function Home() {
 
   return (
     <main>
-      <h1>Hawk Rentals</h1>
+      <section className="hero">
+        <div className="hero-copy"><p className="eyebrow">YOUR PLANS. YOUR PACE.</p><h1>Your next move.<br /><span>A better drive.</span></h1><p className="hero-description">The everyday commute. The weekend escape. Find the right vehicle for wherever life takes you.</p><a className="button" href="#availability">Find your drive <span aria-hidden="true">↗</span></a></div>
+        <div className="hero-art" aria-hidden="true"><span className="road-line" /><span className="hero-word">GO.</span><div className="road-caption">A LITTLE FREEDOM.<br />A LOT OF POSSIBILITY.</div><span className="compass">↗</span></div>
+        <div className="hero-bottom"><span>01 / THE OPEN ROAD IS CALLING</span><span>COMPACT · SUV · SPORTS</span></div>
+      </section>
+      <div className="intro-strip"><span>Made for your kind of journey.</span><span>Everyday essentials</span><span>Room to explore</span><span>Something more exciting ↗</span></div>
+      <div id="availability">
       <AvailabilityFilter />
-      <h2>Reserve a vehicle</h2>
-      <form onSubmit={reserve}>
+      </div>
+      <section id="reserve" className="reservation-section"><div className="reservation-intro"><p className="eyebrow">LET’S GET YOU MOVING</p><h2>One step closer<br />to your next trip.</h2><p>Choose your vehicle, add your details, and reserve your drive.</p><span className="reservation-arrow" aria-hidden="true">↗</span></div><div className="reservation-panel"><h2>Reserve a vehicle</h2><p className="muted">Your next journey starts with the details.</p>
+      <form className="reservation-form" onSubmit={reserve}>
         <p>
           <label>
             Vehicle:{" "}
@@ -130,6 +137,7 @@ export default function Home() {
       </form>
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
+      </div></section>
     </main>
   );
 }

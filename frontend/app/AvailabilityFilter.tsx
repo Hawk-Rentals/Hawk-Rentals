@@ -64,10 +64,11 @@ export default function AvailabilityFilter() {
   }
 
   return (
-    <section>
-      <h2>Check vehicle availability</h2>
+    <section className="availability-section">
+      <p className="eyebrow">THE RIGHT VEHICLE. THE RIGHT TIME.</p>
+      <h2>Find your next drive.</h2>
       <p>Leave the dates empty to see each vehicle&apos;s status for today.</p>
-      <form onSubmit={search}>
+      <form className="search-form" onSubmit={search}>
         <p>
           <label>
             Pickup date:{" "}
@@ -95,10 +96,11 @@ export default function AvailabilityFilter() {
           {loading ? "Searching..." : "Search"}
         </button>
       </form>
+      {loading && <p role="status">Finding your next drive…</p>}
       {error && <p role="alert">{error}</p>}
       {!error && !loading && vehicles.length === 0 && <p role="status">No vehicles match this filter.</p>}
       {vehicles.length > 0 && (
-        <table>
+        <div className="table-scroll"><table>
           <thead>
             <tr>
               <th scope="col">Vehicle</th>
@@ -115,11 +117,11 @@ export default function AvailabilityFilter() {
                 </td>
                 <td>{vehicle.category}</td>
                 <td>${vehicle.daily_rate}/day</td>
-                <td>{STATUS_LABELS[vehicle.status]}</td>
+                <td><span className={`status status-${vehicle.status}`}>{STATUS_LABELS[vehicle.status]}</span></td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </section>
   );
