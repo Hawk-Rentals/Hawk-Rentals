@@ -39,6 +39,22 @@ npm run dev
 
 Open `http://localhost:3000/staff` for the staff fleet management page. Enter the same `STAFF_API_KEY` configured for the backend. The page supports adding, editing, archiving, and refreshing vehicles. Archived vehicles remain in the database for reservation history but are excluded from the customer catalog.
 
+## Demo fleet and photos
+
+Fresh databases start with twelve demo vehicles across compact, sedan, SUV,
+sports, electric, and luxury categories. Prices are illustrative demo rates.
+To add missing demo vehicles to an existing database, run the following from `backend`:
+
+```sh
+python seed_demo_fleet.py
+```
+
+This explicit command preserves staff edits, archived cars, and existing reservations.
+Normal startup still seeds only an empty fleet. Model photos are bundled in
+`frontend/public/vehicles`; sources, photographers, and licences are recorded in
+`frontend/app/vehiclePhotos.json` and displayed at `/photo-credits`.
+Photos illustrate the models; the year, colour, and trim may differ.
+
 ## Manage and cancel reservations (USER-3)
 
 New booking confirmations include a booking number and a private access code.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import VehicleCard from "./VehicleCard";
 
 type VehicleStatus = "available" | "booked" | "unavailable";
 
@@ -16,12 +17,6 @@ type VehicleWithStatus = {
 
 const API_URL = "http://localhost:8000";
 
-const STATUS_LABELS: Record<VehicleStatus, string> = {
-  available: "Available",
-  booked: "Booked",
-  unavailable: "Out of service",
-};
-
 export default function AvailabilityFilter() {
   const [pickupDate, setPickupDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
@@ -29,6 +24,7 @@ export default function AvailabilityFilter() {
   const [vehicles, setVehicles] = useState<VehicleWithStatus[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [searchedDates, setSearchedDates] = useState({ pickup: "", return: "" });
 
   async function loadVehicles(params: URLSearchParams) {
     setError("");
@@ -40,6 +36,7 @@ export default function AvailabilityFilter() {
         throw new Error(typeof result.detail === "string" ? result.detail : "Could not load vehicles");
       }
       setVehicles(result as VehicleWithStatus[]);
+      setSearchedDates({ pickup: params.get("start_date") ?? "", return: params.get("end_date") ?? "" });
     } catch (reason) {
       setVehicles([]);
       setError(reason instanceof Error ? reason.message : "Could not load vehicles");
@@ -99,30 +96,7 @@ export default function AvailabilityFilter() {
       {loading && <p role="status">Finding your next drive…</p>}
       {error && <p role="alert">{error}</p>}
       {!error && !loading && vehicles.length === 0 && <p role="status">No vehicles match this filter.</p>}
-      {vehicles.length > 0 && (
-        <div className="table-scroll"><table>
-          <thead>
-            <tr>
-              <th scope="col">Vehicle</th>
-              <th scope="col">Category</th>
-              <th scope="col">Daily rate</th>
-              <th scope="col">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {vehicles.map((vehicle) => (
-              <tr key={vehicle.id}>
-                <td>
-                  {vehicle.make} {vehicle.model}
-                </td>
-                <td>{vehicle.category}</td>
-                <td>${vehicle.daily_rate}/day</td>
-                <td><span className={`status status-${vehicle.status}`}>{STATUS_LABELS[vehicle.status]}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table></div>
-      )}
+      {vehicles.length > 0 && <><div className="fleet-results"><span>{vehicles.length} vehicles to explore</span><a className="text-link" href="/photo-credits">About the photos</a></div><div className="vehicle-grid">{vehicles.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} pickupDate={searchedDates.pickup} returnDate={searchedDates.return} />)}</div></>}
     </section>
   );
 }

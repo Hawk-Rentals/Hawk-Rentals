@@ -30,6 +30,32 @@ def test_initial_fleet_is_seeded_once_and_visible_in_catalog(client):
     assert len(client.get("/vehicles").json()) == len(vehicles)
 
 
+def test_expanded_demo_fleet_has_twelve_models(client):
+    vehicles = client.get("/vehicles").json()
+    assert len(vehicles) == 12
+    assert {vehicle["category"] for vehicle in vehicles} >= {"compact", "suv", "sports", "electric", "luxury", "sedan"}
+
+
+def test_explicit_demo_top_up_preserves_edits_and_archives(client, monkeypatch):
+    import seed_demo_fleet
+
+    monkeypatch.setattr(seed_demo_fleet, "engine", main.engine)
+    vehicle_id = client.get("/vehicles").json()[0]["id"]
+    client.patch(f"/vehicles/{vehicle_id}", headers=staff_headers(), json={"daily_rate": 77})
+    client.patch(f"/vehicles/{vehicle_id}/archive", headers=staff_headers())
+    with main.Session(main.engine) as session:
+        missing = session.exec(main.select(Vehicle).where(Vehicle.make == "Kia")).one()
+        session.delete(missing)
+        session.commit()
+    assert seed_demo_fleet.add_missing_demo_vehicles() == 1
+    assert seed_demo_fleet.add_missing_demo_vehicles() == 0
+    with main.Session(main.engine) as session:
+        archived = session.get(Vehicle, vehicle_id)
+        assert archived.archived is True
+        assert archived.daily_rate == 77
+        assert len(session.exec(main.select(Vehicle)).all()) == 12
+
+
 def test_staff_credentials_required_for_vehicle_changes(client):
     payload = {"make": "Mazda", "model": "3", "category": "compact", "daily_rate": 58}
     assert client.post("/vehicles", json=payload).status_code == 401

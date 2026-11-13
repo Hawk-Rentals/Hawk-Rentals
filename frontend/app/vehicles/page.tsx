@@ -8,6 +8,7 @@
 // so it cannot conflict with the reservation form (USER-1) or AvailabilityFilter (USER-5).
 
 import { useEffect, useState } from "react";
+import VehicleCard from "../VehicleCard";
 
 // Shape of one vehicle returned by GET /vehicles.
 // `status` is optional because it only exists once USER-5's backend change is merged.
@@ -87,11 +88,12 @@ export default function VehicleListingPage() {
   }, [category]);
 
   return (
-    <main>
-      <h1>Hawk Rentals</h1>
-      <h2>Browse vehicles</h2>
+    <main className="fleet-page">
+      <p className="eyebrow">GOOD CARS. GREAT POSSIBILITIES.</p>
+      <h1>A car for every plan.</h1>
+      <p className="muted">Keep it practical, make room for adventure, or take the scenic route. Find your next drive.</p>
 
-      <p>
+      <p className="category-filter">
         <label>
           Category:{" "}
           <select value={category} onChange={(event) => setCategory(event.target.value)}>
@@ -113,18 +115,12 @@ export default function VehicleListingPage() {
         <p>No vehicles found{category ? ` in the ${category} category` : ""}.</p>
       )}
 
-      <ul>
+      <div className="fleet-results"><span>{vehicles.length} vehicles{category ? ` · ${category}` : " · all categories"}</span><a className="text-link" href="/photo-credits">About the photos</a></div>
+      <div className="vehicle-grid">
         {vehicles.map((vehicle) => (
-          <li key={vehicle.id}>
-            <strong>
-              {vehicle.make} {vehicle.model}
-            </strong>{" "}
-            ({vehicle.category}) - ${vehicle.daily_rate}/day
-            {/* Flag vehicles staff marked out of service. */}
-            {!vehicle.available && " - Currently unavailable"}
-          </li>
+          <VehicleCard key={vehicle.id} vehicle={vehicle} />
         ))}
-      </ul>
+      </div>
 
       <p>
         <a href="/">Reserve a vehicle</a>

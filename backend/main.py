@@ -30,6 +30,14 @@ INITIAL_VEHICLES = [
     {"make": "Honda", "model": "Civic", "category": "compact", "daily_rate": 60.0},
     {"make": "Toyota", "model": "RAV4", "category": "suv", "daily_rate": 85.0},
     {"make": "Ford", "model": "Mustang", "category": "sports", "daily_rate": 120.0},
+    {"make": "Mazda", "model": "3", "category": "compact", "daily_rate": 58.0},
+    {"make": "Hyundai", "model": "Elantra", "category": "compact", "daily_rate": 52.0},
+    {"make": "Tesla", "model": "Model 3", "category": "electric", "daily_rate": 105.0},
+    {"make": "BMW", "model": "3 Series", "category": "luxury", "daily_rate": 135.0},
+    {"make": "Jeep", "model": "Wrangler", "category": "suv", "daily_rate": 110.0},
+    {"make": "Mazda", "model": "MX-5", "category": "sports", "daily_rate": 115.0},
+    {"make": "Kia", "model": "Sportage", "category": "suv", "daily_rate": 82.0},
+    {"make": "Nissan", "model": "Altima", "category": "sedan", "daily_rate": 68.0},
 ]
 
 

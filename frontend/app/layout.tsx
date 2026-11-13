@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <nav aria-label="Main navigation"><Link href="/vehicles">Our fleet</Link><Link href="/reservations">My booking</Link><Link href="/#reserve">Book a vehicle <span aria-hidden="true">↗</span></Link><Link className="staff-link" href="/staff">Staff portal</Link></nav>
         </header>
         {children}
-        <footer><Link className="brand" href="/">HAWK RENTALS</Link><span>A good drive starts here.</span><span>© {new Date().getFullYear()} Hawk Rentals</span></footer>
+        <footer><Link className="brand" href="/">HAWK RENTALS</Link><span>A good drive starts here.</span><Link href="/photo-credits">Photo credits</Link><span>© {new Date().getFullYear()} Hawk Rentals</span></footer>
       </body>
     </html>
   );

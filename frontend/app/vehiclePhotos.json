@@ -1,0 +1,98 @@
+[
+  {
+    "vehicle": "Toyota Corolla",
+    "src": "/vehicles/toyota-corolla.jpg",
+    "author": "Alexander Migl",
+    "source": "https://commons.wikimedia.org/wiki/File:Toyota_Corolla_Hybrid_%28E210%29_IMG_4338.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  {
+    "vehicle": "Honda Civic",
+    "src": "/vehicles/honda-civic.jpg",
+    "author": "© M 93",
+    "source": "https://commons.wikimedia.org/wiki/File:Honda_Civic_e-HEV_Sport_%28XI%29_%E2%80%93_f_30062024.jpg",
+    "license": "CC BY-SA 3.0 de",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/de/deed.en"
+  },
+  {
+    "vehicle": "Toyota RAV4",
+    "src": "/vehicles/toyota-rav4.jpg",
+    "author": "Mr.choppers",
+    "source": "https://commons.wikimedia.org/wiki/File:2024_Toyota_RAV4_Prime_XSE_Premium_in_Silver_Sky_with_Midnight_Black_roof%2C_front_left.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  {
+    "vehicle": "Ford Mustang",
+    "src": "/vehicles/ford-mustang.jpg",
+    "author": "Alexander Migl",
+    "source": "https://commons.wikimedia.org/wiki/File:Ford_Mustang_VII_GT_Rutesheimer_Autoschau_2025_DSC_9234.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  {
+    "vehicle": "Mazda 3",
+    "src": "/vehicles/mazda3.jpg",
+    "author": "TTTNIS",
+    "source": "https://commons.wikimedia.org/wiki/File:Mazda3_SKYACTIV-G.jpg",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+  },
+  {
+    "vehicle": "Hyundai Elantra",
+    "src": "/vehicles/hyundai-elantra.jpg",
+    "author": "Cutlass",
+    "source": "https://commons.wikimedia.org/wiki/File:2023_Hyundai_Elantra_Limited_in_Silver%2C_front_left%2C_04-04-2026.jpg",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+  },
+  {
+    "vehicle": "Tesla Model 3",
+    "src": "/vehicles/tesla-model-3.jpg",
+    "author": "Alexander-93",
+    "source": "https://commons.wikimedia.org/wiki/File:Tesla_Model_3_%282023%29_Autofr%C3%BChling_Ulm_IMG_9282.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  {
+    "vehicle": "BMW 3 Series",
+    "src": "/vehicles/bmw-3-series.jpg",
+    "author": "Alexander-93",
+    "source": "https://commons.wikimedia.org/wiki/File:BMW_G20_%282022%29_IMG_7316_%282%29.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  {
+    "vehicle": "Jeep Wrangler",
+    "src": "/vehicles/jeep-wrangler.jpg",
+    "author": "Vauxford",
+    "source": "https://commons.wikimedia.org/wiki/File:2018_Jeep_Wrangler_Sahara_Unlimited_Multijet_2.1_Front.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  {
+    "vehicle": "Mazda MX-5",
+    "src": "/vehicles/mazda-mx-5.jpg",
+    "author": "根川大橋 (Negawa Ohashi)",
+    "source": "https://commons.wikimedia.org/wiki/File:Mazda_Roadster_%28MX-5%29_by_Negawa_Bridge_%28cropped%29.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  {
+    "vehicle": "Nissan Altima",
+    "src": "/vehicles/nissan-altima.jpg",
+    "author": "MercurySable99",
+    "source": "https://commons.wikimedia.org/wiki/File:2024_Nissan_Altima_SR%2C_front_left%2C_05-05-2025.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  {
+    "vehicle": "Kia Sportage",
+    "src": "/vehicles/kia-sportage.jpg",
+    "author": "LuvsMG481",
+    "source": "https://commons.wikimedia.org/wiki/File:2025_Kia_Sportage_S_front_only.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  }
+]
