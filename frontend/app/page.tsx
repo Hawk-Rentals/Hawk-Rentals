@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import AvailabilityFilter from "./AvailabilityFilter";
+import Link from "next/link";
 
 type Vehicle = {
   id: number;
@@ -15,6 +16,7 @@ type Vehicle = {
 
 type Reservation = {
   id: number;
+  management_token: string;
 };
 
 const API_URL = "http://localhost:8000";
@@ -30,6 +32,7 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [confirmation, setConfirmation] = useState<Reservation | null>(null);
 
   useEffect(() => {
     fetch(`${API_URL}/vehicles`)
@@ -48,6 +51,7 @@ export default function Home() {
   async function reserve(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setConfirmation(null);
     setError("");
     setSubmitting(true);
 
@@ -69,6 +73,7 @@ export default function Home() {
         throw new Error(typeof result.detail === "string" ? result.detail : "Reservation failed");
       }
       setMessage(`Reservation #${(result as Reservation).id} confirmed.`);
+      setConfirmation(result as Reservation);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Reservation failed");
     } finally {
@@ -137,6 +142,7 @@ export default function Home() {
       </form>
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
+      {confirmation && <div className="booking-access"><h3>Keep your booking details</h3><p>Save this access code to view or cancel your reservation. Treat it like a password.</p><label>Booking access code<input readOnly value={confirmation.management_token} onFocus={(event) => event.target.select()} /></label><Link className="button" href={`/reservations#${confirmation.id}:${confirmation.management_token}`}>Manage reservation</Link></div>}
       </div></section>
     </main>
   );

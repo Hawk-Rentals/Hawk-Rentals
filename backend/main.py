@@ -1,3 +1,4 @@
+import hashlib
 import os
 import secrets
 from contextlib import asynccontextmanager
@@ -5,12 +6,14 @@ from datetime import date, timedelta
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlmodel import Session, SQLModel, create_engine, select
 
 from models import (
     Reservation,
+    ReservationConfirmation,
     ReservationCreate,
+    ReservationRead,
     Vehicle,
     VehicleAvailability,
     VehicleCreate,
@@ -41,8 +44,25 @@ def seed_initial_vehicles() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     SQLModel.metadata.create_all(engine)
+    migrate_existing_database()
     seed_initial_vehicles()
     yield
+
+
+def migrate_existing_database() -> None:
+    """Add missing columns to existing SQLite databases without replacing data."""
+    with engine.begin() as connection:
+        for table, additions in {
+            "vehicle": {"archived": "BOOLEAN NOT NULL DEFAULT 0"},
+            "reservation": {
+                "status": "VARCHAR NOT NULL DEFAULT 'confirmed'",
+                "management_token_hash": "VARCHAR",
+            },
+        }.items():
+            columns = {column["name"] for column in inspect(connection).get_columns(table)}
+            for name, definition in additions.items():
+                if name not in columns:
+                    connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {definition}"))
 
 
 app = FastAPI(lifespan=lifespan)
@@ -50,7 +70,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
     allow_methods=["GET", "POST", "PATCH", "PUT", "OPTIONS"],
-    allow_headers=["Content-Type", "X-Staff-Key"],
+    allow_headers=["Content-Type", "X-Staff-Key", "X-Booking-Token"],
 )
 
 
@@ -92,6 +112,7 @@ def get_vehicles(
         booked_ids = set(
             session.exec(
                 select(Reservation.vehicle_id).where(
+                    Reservation.status == "confirmed",
                     Reservation.start_date < end_date,
                     Reservation.end_date > start_date,
                 )
@@ -161,7 +182,7 @@ def archive_vehicle(vehicle_id: int):
         return vehicle
 
 
-@app.post("/reservations", response_model=Reservation, status_code=201)
+@app.post("/reservations", response_model=ReservationConfirmation, status_code=201)
 def create_reservation(request: ReservationCreate):
     if request.start_date >= request.end_date:
         raise HTTPException(status_code=400, detail="Return date must be after pickup date")
@@ -182,6 +203,7 @@ def create_reservation(request: ReservationCreate):
 
         overlapping = session.exec(
             select(Reservation).where(
+                Reservation.status == "confirmed",
                 Reservation.vehicle_id == request.vehicle_id,
                 Reservation.start_date < request.end_date,
                 Reservation.end_date > request.start_date,
@@ -190,12 +212,60 @@ def create_reservation(request: ReservationCreate):
         if overlapping is not None:
             raise HTTPException(status_code=409, detail="Vehicle already booked for these dates")
 
+        management_token = secrets.token_urlsafe(32)
         reservation = Reservation(
             vehicle_id=request.vehicle_id,
             customer_name=request.customer_name.strip(),
             start_date=request.start_date,
             end_date=request.end_date,
+            management_token_hash=hashlib.sha256(management_token.encode()).hexdigest(),
         )
+        session.add(reservation)
+        session.commit()
+        session.refresh(reservation)
+        return ReservationConfirmation(
+            **reservation.model_dump(exclude={"management_token_hash"}),
+            management_token=management_token,
+        )
+
+
+def find_customer_reservation(session: Session, reservation_id: int, token: str | None) -> Reservation:
+    reservation = session.get(Reservation, reservation_id)
+    supplied_hash = hashlib.sha256((token or "").encode()).hexdigest()
+    if (
+        reservation is None
+        or reservation.management_token_hash is None
+        or not secrets.compare_digest(reservation.management_token_hash, supplied_hash)
+    ):
+        raise HTTPException(
+            status_code=404,
+            detail="Reservation not found. Check your booking number and access code.",
+        )
+    return reservation
+
+
+@app.get("/reservations/{reservation_id}", response_model=ReservationRead)
+def get_reservation(
+    reservation_id: int,
+    x_booking_token: str | None = Header(default=None, alias="X-Booking-Token"),
+):
+    with Session(engine) as session:
+        return find_customer_reservation(session, reservation_id, x_booking_token)
+
+
+@app.post("/reservations/{reservation_id}/cancel", response_model=ReservationRead)
+def cancel_reservation(
+    reservation_id: int,
+    x_booking_token: str | None = Header(default=None, alias="X-Booking-Token"),
+):
+    with Session(engine) as session:
+        session.exec(text("BEGIN IMMEDIATE"))
+        reservation = find_customer_reservation(session, reservation_id, x_booking_token)
+        if reservation.status == "cancelled":
+            raise HTTPException(status_code=409, detail="This reservation has already been cancelled.")
+        if reservation.start_date <= date.today():
+            raise HTTPException(status_code=409, detail="Only upcoming reservations can be cancelled. Pickup must be after today.")
+        reservation.status = "cancelled"
         session.add(reservation)
         session.commit()
         session.refresh(reservation)

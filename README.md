@@ -39,6 +39,33 @@ npm run dev
 
 Open `http://localhost:3000/staff` for the staff fleet management page. Enter the same `STAFF_API_KEY` configured for the backend. The page supports adding, editing, archiving, and refreshing vehicles. Archived vehicles remain in the database for reservation history but are excluded from the customer catalog.
 
+## Manage and cancel reservations (USER-3)
+
+New booking confirmations include a booking number and a private access code.
+Save both, then use **My booking** (`/reservations`) to look up the booking.
+Select **Cancel reservation**, then confirm or choose **Keep reservation**.
+Cancelled bookings remain saved, display a Cancelled status, and no longer block
+vehicle availability or new reservations for those dates. Out-of-service and
+archived vehicles remain unavailable.
+
+The application does not have customer accounts yet. The private access code
+acts as the booking credential; only its SHA-256 hash is stored in SQLite.
+Lookup (`GET /reservations/{id}`) and cancellation
+(`POST /reservations/{id}/cancel`) require it in the `X-Booking-Token` header.
+Existing bookings are preserved by an automatic additive schema migration, but
+bookings created before this feature have no access code and cannot be managed
+through the customer lookup. Create a new booking for the demo.
+
+Cancellation is allowed only when the pickup date is after the server's current
+date. Date-only bookings cannot express a precise 24-hour cutoff. Payments and
+refunds are not implemented; no refund is claimed or issued by this feature.
+The backlog's 24-hour refund policy still needs clarification before adding payments.
+
+Demo: reserve a vehicle for future dates, save the confirmation details, check
+that the vehicle is booked for those dates, open My booking, choose Keep
+reservation once, then cancel and confirm. Reload the booking to show the saved
+Cancelled status, then search the same dates to show restored availability.
+
 ## Tests
 
 ```sh

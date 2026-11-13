@@ -70,6 +70,21 @@ class Reservation(SQLModel, table=True):
     customer_name: str
     start_date: date
     end_date: date
+    status: str = "confirmed"
+    management_token_hash: str | None = None
+
+
+class ReservationRead(SQLModel):
+    id: int
+    vehicle_id: int
+    customer_name: str
+    start_date: date
+    end_date: date
+    status: Literal["confirmed", "cancelled"]
+
+
+class ReservationConfirmation(ReservationRead):
+    management_token: str
 
 
 class ReservationCreate(SQLModel):
