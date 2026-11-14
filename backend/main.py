@@ -4,7 +4,7 @@ import secrets
 from contextlib import asynccontextmanager
 from datetime import date, timedelta
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text
 from sqlmodel import Session, SQLModel, create_engine, select
@@ -101,7 +101,13 @@ def get_vehicles(
     start_date: date | None = None,
     end_date: date | None = None,
     status: VehicleStatus | None = None,
+    # USER-4: optional daily-rate range, e.g. /vehicles?min_price=50&max_price=100
+    min_price: float | None = Query(default=None, ge=0),
+    max_price: float | None = Query(default=None, ge=0),
 ):
+    # USER-4: a range where the minimum is above the maximum can never match anything.
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(status_code=400, detail="Minimum price cannot be greater than maximum price")
     # Without dates, report each vehicle's status for today.
     if (start_date is None) != (end_date is None):
         raise HTTPException(status_code=400, detail="Pickup and return dates must be given together")
@@ -115,7 +121,11 @@ def get_vehicles(
         # Archived vehicles remain in the DB for existing reservations/auditing.
         query = select(Vehicle).where(Vehicle.archived == False)  # noqa: E712
         if category:
-            query = query.where(Vehicle.category == category)
+           query = query.where(Vehicle.category == category)
+        if min_price is not None:
+            query = query.where(Vehicle.daily_rate >= min_price)
+        if max_price is not None:
+            query = query.where(Vehicle.daily_rate <= max_price)
         vehicles = session.exec(query).all()
         booked_ids = set(
             session.exec(

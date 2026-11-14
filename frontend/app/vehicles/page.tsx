@@ -7,8 +7,8 @@
 // This file is self-contained on purpose: it does not import from or edit page.tsx,
 // so it cannot conflict with the reservation form (USER-1) or AvailabilityFilter (USER-5).
 
-import { useEffect, useState } from "react";
 import VehicleCard from "../VehicleCard";
+import { useEffect, useState, type FormEvent } from "react";
 
 // Shape of one vehicle returned by GET /vehicles.
 // `status` is optional because it only exists once USER-5's backend change is merged.
@@ -33,6 +33,13 @@ export default function VehicleListingPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // USER-4: price range. The *Input values are what the user is typing; `appliedPrice`
+  // only changes when they press "Apply", so we do not call the backend on every keystroke.
+  const [minInput, setMinInput] = useState("");
+  const [maxInput, setMaxInput] = useState("");
+  const [appliedPrice, setAppliedPrice] = useState({ min: "", max: "" });
+  const [priceError, setPriceError] = useState("");
 
   // Step 1 (runs once): fetch ALL vehicles to discover which categories exist.
   // Building the dropdown from real data means categories that staff add later
@@ -60,8 +67,12 @@ export default function VehicleListingPage() {
     setLoading(true);
     setError("");
 
-    // Leave the query string off entirely for "All categories".
-    const query = category ? `?category=${encodeURIComponent(category)}` : "";
+    // Only add the parameters that are set, so "All categories" / empty prices send nothing.
+    const params = new URLSearchParams();
+    if (category) params.set("category", category);
+    if (appliedPrice.min) params.set("min_price", appliedPrice.min);
+    if (appliedPrice.max) params.set("max_price", appliedPrice.max);
+    const query = params.toString() ? `?${params}` : "";
 
     fetch(`${API_URL}/vehicles${query}`)
       .then((response) => {
@@ -85,7 +96,27 @@ export default function VehicleListingPage() {
     return () => {
       cancelled = true;
     };
-  }, [category]);
+  }, [category, appliedPrice]); // re-fetch when the category OR the applied price range changes
+
+  // USER-4: validate in the browser first, then apply the price range.
+  function applyPrice(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (minInput && maxInput && Number(minInput) > Number(maxInput)) {
+      setPriceError("Minimum price cannot be greater than maximum price.");
+      return;
+    }
+    setPriceError("");
+    setAppliedPrice({ min: minInput, max: maxInput });
+  }
+
+  function clearPrice() {
+    setMinInput("");
+    setMaxInput("");
+    setPriceError("");
+    setAppliedPrice({ min: "", max: "" });
+  }
+
+  const priceActive = Boolean(appliedPrice.min || appliedPrice.max);
 
   return (
     <main className="fleet-page">
@@ -107,12 +138,32 @@ export default function VehicleListingPage() {
         </label>
       </p>
 
+      {/* USER-4: Filter By Price (daily rate, in dollars; both ends inclusive) */}
+      <form onSubmit={applyPrice}>
+        <p>
+          <label>
+            Min price/day: $
+            <input type="number" min="0" step="1" value={minInput} onChange={(event) => setMinInput(event.target.value)} />
+          </label>{" "}
+          <label>
+            Max price/day: $
+            <input type="number" min="0" step="1" value={maxInput} onChange={(event) => setMaxInput(event.target.value)} />
+          </label>{" "}
+          <button type="submit">Apply</button>{" "}
+          <button type="button" onClick={clearPrice}>Clear price</button>
+        </p>
+      </form>
+      {priceError && <p role="alert">{priceError}</p>}
+
       {error && <p role="alert">{error}</p>}
       {loading && <p>Loading vehicles...</p>}
 
       {/* Empty state: shown when the request worked but nothing matches. */}
       {!loading && !error && vehicles.length === 0 && (
-        <p>No vehicles found{category ? ` in the ${category} category` : ""}.</p>
+        <p>
+          No vehicles found{category ? ` in the ${category} category` : ""}
+          {priceActive ? " within this price range" : ""}.
+        </p>
       )}
 
       <div className="fleet-results"><span>{vehicles.length} vehicles{category ? ` · ${category}` : " · all categories"}</span><a className="text-link" href="/photo-credits">About the photos</a></div>
