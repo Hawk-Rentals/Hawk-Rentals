@@ -82,6 +82,42 @@ that the vehicle is booked for those dates, open My booking, choose Keep
 reservation once, then cancel and confirm. Reload the booking to show the saved
 Cancelled status, then search the same dates to show restored availability.
 
+## Rental history (USER-6)
+
+Customers can view rental history at `/history`. The history page only loads bookings
+whose booking number **and** private access code are known, using
+`GET /reservations/{id}/history` with the `X-Booking-Token` header.
+
+There is no customer login system, so **do not search for all reservations
+by customer name**. Each booking is authorized separately with its original
+access code; users can add existing bookings or optionally save new bookings
+to this browser's local storage. This is intended for personal devices only.
+Users can remove stored booking credentials without cancelling the booking.
+A different browser or device needs the access code entered again.
+
+The page shows the vehicle, dates, customer, status (upcoming, in progress,
+completed, cancelled), and original booking cost estimate where known.
+New bookings snapshot the daily rate when reserved; later price edits or
+vehicle archiving do not retroactively change the estimate. Historical
+bookings without a price snapshot display "Not recorded" instead of
+inventing a rate. No payment or refund status is asserted by the estimate.
+Bookings made before private access codes were introduced cannot be
+imported without a secure account-recovery mechanism.
+
+### USER-6 demo
+
+1. Start the backend and frontend as described above.
+2. Create a future booking on the home page and note its ID/access code.
+3. Choose **Save to rental history on this device**, then open `/history`.
+4. Verify the booking appears with its status, rental dates, vehicle name
+   and original estimate.
+5. Use **Remove from this device** and re-add the booking with its code.
+6. For cancellation integration, cancel an upcoming booking in `/reservations`,
+   then refresh `/history` to see the updated Cancelled status.
+
+Run `python -m pytest tests/test_rental_history.py -q` from the backend
+directory to run USER-6's automated API tests.
+
 ## Tests
 
 ```sh
