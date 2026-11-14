@@ -95,6 +95,27 @@ def health():
     return {"status": "ok"}
 
 
+def booked_until_date(reservations: list[Reservation], start_date: date, end_date: date) -> date | None:
+    """USER-5: return when a vehicle becomes free again, or None if it is free for the whole period.
+
+    Two periods overlap when existing pickup < requested return and existing return > requested
+    pickup (the same rule USER-1 uses to reject double bookings). Back-to-back bookings are
+    chained so the customer sees the real date the car is next free.
+    """
+    if not any(r.start_date < end_date and r.end_date > start_date for r in reservations):
+        return None
+    free_from = start_date
+    for reservation in sorted(reservations, key=lambda r: r.start_date):
+        if reservation.start_date <= free_from < reservation.end_date:
+            free_from = reservation.end_date
+        elif reservation.start_date > free_from:
+            break
+    if free_from == start_date:
+        # Free at pickup but booked later in the requested period.
+        free_from = max(r.end_date for r in reservations if r.start_date < end_date and r.end_date > start_date)
+    return free_from
+
+
 @app.get("/vehicles", response_model=list[VehicleAvailability])
 def get_vehicles(
     category: str | None = None,
@@ -127,26 +148,31 @@ def get_vehicles(
         if max_price is not None:
             query = query.where(Vehicle.daily_rate <= max_price)
         vehicles = session.exec(query).all()
-        booked_ids = set(
-            session.exec(
-                select(Reservation.vehicle_id).where(
-                    Reservation.status == "confirmed",
-                    Reservation.start_date < end_date,
-                    Reservation.end_date > start_date,
-                )
-            ).all()
-        )
+        # USER-5: confirmed reservations that end after the requested pickup date.
+        # Cancelled reservations (USER-3) are ignored, so cancelling frees the car.
+        upcoming = session.exec(
+            select(Reservation).where(
+                Reservation.status == "confirmed",
+                Reservation.end_date > start_date,
+            )
+        ).all()
+
+    reservations_by_vehicle: dict[int, list[Reservation]] = {}
+    for reservation in upcoming:
+        reservations_by_vehicle.setdefault(reservation.vehicle_id, []).append(reservation)
 
     results = []
     for vehicle in vehicles:
+        booked_until = None
         if not vehicle.available:
             vehicle_status = "unavailable"
-        elif vehicle.id in booked_ids:
-            vehicle_status = "booked"
         else:
-            vehicle_status = "available"
+            booked_until = booked_until_date(reservations_by_vehicle.get(vehicle.id, []), start_date, end_date)
+            vehicle_status = "booked" if booked_until else "available"
         if status is None or vehicle_status == status:
-            results.append(VehicleAvailability(**vehicle.model_dump(), status=vehicle_status))
+            results.append(
+                VehicleAvailability(**vehicle.model_dump(), status=vehicle_status, booked_until=booked_until)
+            )
     return results
 
 

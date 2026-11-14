@@ -62,6 +62,9 @@ class VehicleAvailability(SQLModel):
     available: bool
     archived: bool
     status: VehicleStatus
+    # USER-5: for a booked vehicle, the first date it is free again after the
+    # requested pickup date (back-to-back bookings are chained). None otherwise.
+    booked_until: date | None = None
 
 
 class Reservation(SQLModel, table=True):

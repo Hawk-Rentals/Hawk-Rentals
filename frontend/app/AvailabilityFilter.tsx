@@ -13,6 +13,7 @@ type VehicleWithStatus = {
   daily_rate: number;
   available: boolean;
   status: VehicleStatus;
+  booked_until?: string | null;
 };
 
 const API_URL = "http://localhost:8000";

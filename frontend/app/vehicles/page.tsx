@@ -20,6 +20,7 @@ type Vehicle = {
   daily_rate: number;
   available: boolean;
   status?: string;
+  booked_until?: string | null;
 };
 
 const API_URL = "http://localhost:8000";
@@ -40,6 +41,14 @@ export default function VehicleListingPage() {
   const [maxInput, setMaxInput] = useState("");
   const [appliedPrice, setAppliedPrice] = useState({ min: "", max: "" });
   const [priceError, setPriceError] = useState("");
+
+  // USER-5: rental period and booked-car visibility. Booked and out-of-service cars are
+  // hidden by default (team decision in the backlog); the checkbox shows them greyed out.
+  const [pickupInput, setPickupInput] = useState("");
+  const [returnInput, setReturnInput] = useState("");
+  const [appliedDates, setAppliedDates] = useState({ pickup: "", return: "" });
+  const [dateError, setDateError] = useState("");
+  const [showUnavailable, setShowUnavailable] = useState(false);
 
   // Step 1 (runs once): fetch ALL vehicles to discover which categories exist.
   // Building the dropdown from real data means categories that staff add later
@@ -72,6 +81,12 @@ export default function VehicleListingPage() {
     if (category) params.set("category", category);
     if (appliedPrice.min) params.set("min_price", appliedPrice.min);
     if (appliedPrice.max) params.set("max_price", appliedPrice.max);
+    // USER-5: same endpoint, so availability combines with category and price filters.
+    if (appliedDates.pickup && appliedDates.return) {
+      params.set("start_date", appliedDates.pickup);
+      params.set("end_date", appliedDates.return);
+    }
+    if (!showUnavailable) params.set("status", "available");
     const query = params.toString() ? `?${params}` : "";
 
     fetch(`${API_URL}/vehicles${query}`)
@@ -96,7 +111,7 @@ export default function VehicleListingPage() {
     return () => {
       cancelled = true;
     };
-  }, [category, appliedPrice]); // re-fetch when the category OR the applied price range changes
+  }, [category, appliedPrice, appliedDates, showUnavailable]); // re-fetch when any filter changes
 
   // USER-4: validate in the browser first, then apply the price range.
   function applyPrice(event: FormEvent<HTMLFormElement>) {
@@ -114,6 +129,28 @@ export default function VehicleListingPage() {
     setMaxInput("");
     setPriceError("");
     setAppliedPrice({ min: "", max: "" });
+  }
+
+  // USER-5: both dates are needed, and return must be after pickup (mirrors the backend rule).
+  function applyDates(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!pickupInput || !returnInput) {
+      setDateError("Choose both a pickup and a return date.");
+      return;
+    }
+    if (returnInput <= pickupInput) {
+      setDateError("Return date must be after pickup date.");
+      return;
+    }
+    setDateError("");
+    setAppliedDates({ pickup: pickupInput, return: returnInput });
+  }
+
+  function clearDates() {
+    setPickupInput("");
+    setReturnInput("");
+    setDateError("");
+    setAppliedDates({ pickup: "", return: "" });
   }
 
   const priceActive = Boolean(appliedPrice.min || appliedPrice.max);
@@ -155,6 +192,29 @@ export default function VehicleListingPage() {
       </form>
       {priceError && <p role="alert">{priceError}</p>}
 
+      {/* USER-5: Filter Booked Vehicles. Without dates, status is shown for today. */}
+      <form onSubmit={applyDates}>
+        <p>
+          <label>
+            Pickup date:
+            <input type="date" value={pickupInput} onChange={(event) => setPickupInput(event.target.value)} />
+          </label>{" "}
+          <label>
+            Return date:
+            <input type="date" value={returnInput} onChange={(event) => setReturnInput(event.target.value)} />
+          </label>{" "}
+          <button type="submit">Check availability</button>{" "}
+          <button type="button" onClick={clearDates}>Clear dates</button>
+        </p>
+        <p>
+          <label className="checkbox-label">
+            <input type="checkbox" checked={showUnavailable} onChange={(event) => setShowUnavailable(event.target.checked)} />
+            Show booked and out-of-service cars
+          </label>
+        </p>
+      </form>
+      {dateError && <p role="alert">{dateError}</p>}
+
       {error && <p role="alert">{error}</p>}
       {loading && <p>Loading vehicles...</p>}
 
@@ -162,14 +222,16 @@ export default function VehicleListingPage() {
       {!loading && !error && vehicles.length === 0 && (
         <p>
           No vehicles found{category ? ` in the ${category} category` : ""}
-          {priceActive ? " within this price range" : ""}.
+          {priceActive ? " within this price range" : ""}
+          {showUnavailable ? "" : " that are available"}
+          {appliedDates.pickup ? ` from ${appliedDates.pickup} to ${appliedDates.return}` : " today"}.
         </p>
       )}
 
       <div className="fleet-results"><span>{vehicles.length} vehicles{category ? ` · ${category}` : " · all categories"}</span><a className="text-link" href="/photo-credits">About the photos</a></div>
       <div className="vehicle-grid">
         {vehicles.map((vehicle) => (
-          <VehicleCard key={vehicle.id} vehicle={vehicle} />
+          <VehicleCard key={vehicle.id} vehicle={vehicle} pickupDate={appliedDates.pickup} returnDate={appliedDates.return} />
         ))}
       </div>
 
