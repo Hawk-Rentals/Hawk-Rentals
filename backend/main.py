@@ -14,6 +14,7 @@ from models import (
     ReservationConfirmation,
     ReservationCreate,
     ReservationRead,
+    RentalHistoryRead,
     Vehicle,
     VehicleAvailability,
     VehicleCreate,
@@ -65,6 +66,7 @@ def migrate_existing_database() -> None:
             "reservation": {
                 "status": "VARCHAR NOT NULL DEFAULT 'confirmed'",
                 "management_token_hash": "VARCHAR",
+                "booked_daily_rate": "FLOAT",
             },
         }.items():
             columns = {column["name"] for column in inspect(connection).get_columns(table)}
@@ -263,6 +265,7 @@ def create_reservation(request: ReservationCreate):
             start_date=request.start_date,
             end_date=request.end_date,
             management_token_hash=hashlib.sha256(management_token.encode()).hexdigest(),
+            booked_daily_rate=vehicle.daily_rate,
         )
         session.add(reservation)
         session.commit()
@@ -295,6 +298,51 @@ def get_reservation(
 ):
     with Session(engine) as session:
         return find_customer_reservation(session, reservation_id, x_booking_token)
+
+
+@app.get("/reservations/{reservation_id}/history", response_model=RentalHistoryRead)
+def get_rental_history_item(
+    reservation_id: int,
+    x_booking_token: str | None = Header(default=None, alias="X-Booking-Token"),
+):
+    """USER-6: return enriched history only for a booking whose access code is valid.
+
+    Hawk Rentals has no customer accounts. Do not reveal other reservations based
+    on a matching name: customers collect their own booking credentials locally.
+    """
+    with Session(engine) as session:
+        reservation = find_customer_reservation(session, reservation_id, x_booking_token)
+        vehicle = session.get(Vehicle, reservation.vehicle_id)
+
+        today = date.today()
+        if reservation.status == "cancelled":
+            rental_state = "cancelled"
+        elif reservation.end_date <= today:
+            rental_state = "completed"
+        elif reservation.start_date <= today:
+            rental_state = "ongoing"
+        else:
+            rental_state = "upcoming"
+
+        daily_rate = reservation.booked_daily_rate
+        original_total = (
+            round(daily_rate * (reservation.end_date - reservation.start_date).days, 2)
+            if daily_rate is not None
+            else None
+        )
+        return RentalHistoryRead(
+            id=reservation.id,
+            vehicle_id=reservation.vehicle_id,
+            vehicle_make=vehicle.make if vehicle else "Unknown",
+            vehicle_model=vehicle.model if vehicle else "vehicle",
+            customer_name=reservation.customer_name,
+            start_date=reservation.start_date,
+            end_date=reservation.end_date,
+            status=reservation.status,
+            rental_state=rental_state,
+            booked_daily_rate=daily_rate,
+            original_total=original_total,
+        )
 
 
 @app.post("/reservations/{reservation_id}/cancel", response_model=ReservationRead)
