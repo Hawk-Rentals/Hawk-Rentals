@@ -3,6 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 
 import AvailabilityFilter from "./AvailabilityFilter";
+import Link from "next/link";
+import { VehiclePhoto } from "./VehicleCard";
 
 type Vehicle = {
   id: number;
@@ -15,6 +17,7 @@ type Vehicle = {
 
 type Reservation = {
   id: number;
+  management_token: string;
 };
 
 const API_URL = "http://localhost:8000";
@@ -30,8 +33,13 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [confirmation, setConfirmation] = useState<Reservation | null>(null);
+  const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === vehicleId);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("pickup")) setPickupDate(params.get("pickup")!);
+    if (params.get("return")) setReturnDate(params.get("return")!);
     fetch(`${API_URL}/vehicles`)
       .then((response) => {
         if (!response.ok) throw new Error("Could not load vehicles");
@@ -40,7 +48,10 @@ export default function Home() {
       .then((data) => {
         const available = data.filter((vehicle) => vehicle.available);
         setVehicles(available);
-        if (available.length > 0) setVehicleId(String(available[0].id));
+        if (available.length > 0) {
+          const selected = available.find((vehicle) => String(vehicle.id) === params.get("vehicle"));
+          setVehicleId(String((selected ?? available[0]).id));
+        }
       })
       .catch((reason: Error) => setError(reason.message));
   }, []);
@@ -48,6 +59,7 @@ export default function Home() {
   async function reserve(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setConfirmation(null);
     setError("");
     setSubmitting(true);
 
@@ -69,6 +81,7 @@ export default function Home() {
         throw new Error(typeof result.detail === "string" ? result.detail : "Reservation failed");
       }
       setMessage(`Reservation #${(result as Reservation).id} confirmed.`);
+      setConfirmation(result as Reservation);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Reservation failed");
     } finally {
@@ -89,6 +102,7 @@ export default function Home() {
       </div>
       <section id="reserve" className="reservation-section"><div className="reservation-intro"><p className="eyebrow">LET’S GET YOU MOVING</p><h2>One step closer<br />to your next trip.</h2><p>Choose your vehicle, add your details, and reserve your drive.</p><span className="reservation-arrow" aria-hidden="true">↗</span></div><div className="reservation-panel"><h2>Reserve a vehicle</h2><p className="muted">Your next journey starts with the details.</p>
       <form className="reservation-form" onSubmit={reserve}>
+        {selectedVehicle && <div className="selected-vehicle-photo"><VehiclePhoto make={selectedVehicle.make} model={selectedVehicle.model} /></div>}
         <p>
           <label>
             Vehicle:{" "}
@@ -137,6 +151,7 @@ export default function Home() {
       </form>
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
+      {confirmation && <div className="booking-access"><h3>Keep your booking details</h3><p>Save this access code to view or cancel your reservation. Treat it like a password.</p><label>Booking access code<input readOnly value={confirmation.management_token} onFocus={(event) => event.target.select()} /></label><Link className="button" href={`/reservations#${confirmation.id}:${confirmation.management_token}`}>Manage reservation</Link></div>}
       </div></section>
     </main>
   );
