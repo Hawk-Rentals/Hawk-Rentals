@@ -34,6 +34,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmation, setConfirmation] = useState<Reservation | null>(null);
+  const [savedNotice, setSavedNotice] = useState("");
   const selectedVehicle = vehicles.find((vehicle) => String(vehicle.id) === vehicleId);
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function Home() {
     event.preventDefault();
     setMessage("");
     setConfirmation(null);
+    setSavedNotice("");
     setError("");
     setSubmitting(true);
 
@@ -86,6 +88,22 @@ export default function Home() {
       setError(reason instanceof Error ? reason.message : "Reservation failed");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function rememberBooking() {
+    if (!confirmation) return;
+    try {
+      const key = "hawk-rentals-history-access-v1";
+      const previous = JSON.parse(localStorage.getItem(key) ?? "[]");
+      const valid = Array.isArray(previous) ? previous.filter((entry) => entry &&
+        Number.isSafeInteger(entry.id) && typeof entry.token === "string" &&
+        entry.id !== confirmation.id) : [];
+      valid.push({ id: confirmation.id, token: confirmation.management_token });
+      localStorage.setItem(key, JSON.stringify(valid));
+      setSavedNotice("Saved to rental history on this device. Do not use this on a shared computer.");
+    } catch {
+      setSavedNotice("This browser could not save the booking. Keep your access code instead.");
     }
   }
 
@@ -151,7 +169,7 @@ export default function Home() {
       </form>
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
-      {confirmation && <div className="booking-access"><h3>Keep your booking details</h3><p>Save this access code to view or cancel your reservation. Treat it like a password.</p><label>Booking access code<input readOnly value={confirmation.management_token} onFocus={(event) => event.target.select()} /></label><Link className="button" href={`/reservations#${confirmation.id}:${confirmation.management_token}`}>Manage reservation</Link></div>}
+      {confirmation && <div className="booking-access"><h3>Keep your booking details</h3><p>Save this access code to view or cancel your reservation. Treat it like a password.</p><label>Booking access code<input readOnly value={confirmation.management_token} onFocus={(event) => event.target.select()} /></label><Link className="button" href={`/reservations#${confirmation.id}:${confirmation.management_token}`}>Manage reservation</Link><button type="button" onClick={rememberBooking}>Save to rental history on this device</button><Link className="text-link" href="/history">View rental history</Link>{savedNotice && <p role="status">{savedNotice}</p>}</div>}
       </div></section>
     </main>
   );
