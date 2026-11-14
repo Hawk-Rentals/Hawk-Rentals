@@ -75,6 +75,7 @@ class Reservation(SQLModel, table=True):
     end_date: date
     status: str = "confirmed"
     management_token_hash: str | None = None
+    booked_daily_rate: float | None = None
 
 
 class ReservationRead(SQLModel):
@@ -97,3 +98,19 @@ class ReservationCreate(SQLModel):
     driver_license_expiry: date
     start_date: date
     end_date: date
+
+
+class RentalHistoryRead(SQLModel):
+    """Verified booking details used by the customer rental-history page."""
+
+    id: int
+    vehicle_id: int
+    vehicle_make: str
+    vehicle_model: str
+    customer_name: str
+    start_date: date
+    end_date: date
+    status: Literal["confirmed", "cancelled"]
+    rental_state: Literal["upcoming", "ongoing", "completed", "cancelled"]
+    booked_daily_rate: float | None
+    original_total: float | None
