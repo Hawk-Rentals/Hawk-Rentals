@@ -61,3 +61,9 @@
 @media (max-width: 950px) { .vehicle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 580px) { .vehicle-grid { grid-template-columns: 1fr; } .fleet-page h1 { font-size: 40px; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .vehicle-card, button, .button { transition: none; } }
+
+/* USER-5: booked / out-of-service cars are greyed out and labelled (text label, not colour alone). */
+.vehicle-card-unavailable .vehicle-photo { filter: grayscale(1); opacity: .6; }
+.vehicle-card-unavailable h3 { color: var(--muted); }
+.booked-until { margin: -14px 0 18px; font-size: 12px; font-weight: 600; color: #8a6427; }
+.checkbox-label { flex-direction: row; align-items: center; gap: 10px; }
