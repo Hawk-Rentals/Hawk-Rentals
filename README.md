@@ -129,6 +129,35 @@ details. **Save changes** checks availability and displays the updated
 confirmation. Customers keep the same booking number and access code. If a
 change is rejected, the saved booking stays intact.
 
+## Vehicle Maintenance History (REP-2B)
+
+Open **Staff Fleet Management** (`/staff`) and choose **Vehicle maintenance history**
+(`/staff/maintenance`). Enter the same `STAFF_API_KEY` used for staff fleet changes,
+select a vehicle, and choose **Refresh history**. Staff can view archived vehicles'
+maintenance records, log completed maintenance activities, report open defects,
+and resolve defects with mandatory resolution notes. Resolved records remain in
+history, including timestamps. All history and mutations require `X-Staff-Key`.
+
+API routes:
+- `GET /staff/maintenance/vehicles`: all fleet vehicles, including archived
+- `GET /staff/vehicles/{id}/maintenance`: history of maintenance and defects
+- `POST /staff/vehicles/{id}/maintenance`: add `maintenance` or `defect`
+- `PATCH /staff/vehicles/{id}/maintenance/{record_id}/resolve`: resolve an open defect
+
+Maintenance is completed when logged; defects start open and are resolved with
+notes. Creating or resolving a defect does **not** automatically change the
+vehicle's availability: vehicle safety decisions remain with REP-2A's inspection
+workflow. REP-2B has a dedicated SQLite table to avoid modifying REP-2A's
+inspection schema. The inspection-history panel probes the protected REP-2A
+inspection endpoint when available; integration of the final endpoint must be
+confirmed after REP-2A merges. No maintenance or inspection history is publicly
+exposed. Records remain accessible when a vehicle is archived.
+
+Demo: open the staff maintenance page, authorize with the staff key, select a
+vehicle, record a maintenance activity, record a defect, resolve the defect with
+notes, and refresh to demonstrate that every entry is preserved. Run
+`python -m pytest tests/test_maintenance_history.py -q` in `backend`.
+
 ## Tests
 
 ```sh
