@@ -88,3 +88,27 @@
 .history-actions .secondary-button { border: 1px solid var(--line); background: white; padding: 10px 14px; font-size: 12px; }
 @media (max-width: 850px) { .history-form { grid-template-columns: 1fr 1fr; } .history-form button { grid-column: 1/-1; } .history-details { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 600px) { .history-form, .history-details { grid-template-columns: 1fr; } .history-card-heading { flex-direction: column; } .history-page { padding-top: 18px; } }
+
+/* REP-2B – maintenance and defect history */
+.maintenance-page { max-width: 1030px; padding-top: 38px; }
+.maintenance-panel { padding: 26px; background: white; border: 1px solid var(--line); border-radius: 12px; margin: 24px 0; }
+.maintenance-panel h2 { font-size: 25px; margin: 0 0 14px; }
+.maintenance-panel h3 { font-size: 18px; margin: 8px 0; overflow-wrap: anywhere; }
+.maintenance-grid, .maintenance-form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.maintenance-wide { grid-column: 1 / -1; }
+.maintenance-form button { justify-self: start; }
+.maintenance-panel textarea { padding: 12px; font: inherit; border: 1px solid var(--line); border-radius: 6px; resize: vertical; width: 100%; min-width: 0; }
+.maintenance-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
+.maintenance-panel .secondary-button { background: #edf0e7; }
+.maintenance-topline { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+.maintenance-record { border-top: 1px solid var(--line); padding: 18px 0; }
+.maintenance-record:first-child { margin-top: 12px; }
+.maintenance-record .eyebrow { font-size: 10px; }
+.maintenance-pill { border-radius: 40px; padding: 6px 12px; font-size: 12px; text-transform: capitalize; }
+.maintenance-open { background: #f6e2df; color: #8e352c; }
+.maintenance-resolved { background: #e8f0db; color: #426329; }
+.maintenance-completed { background: #e5edf5; color: #315678; }
+.maintenance-open-count { background: #f6e2df; color: #8e352c; border-radius: 40px; padding: 7px 12px; font-size: 12px; }
+.maintenance-resolve { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.maintenance-resolve label { width: 100%; }
+@media(max-width:620px) { .maintenance-grid, .maintenance-form { grid-template-columns: 1fr; } .maintenance-page { padding-top: 20px; } .maintenance-panel { padding: 18px; } }
