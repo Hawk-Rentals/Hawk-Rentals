@@ -158,6 +158,19 @@ vehicle, record a maintenance activity, record a defect, resolve the defect with
 notes, and refresh to demonstrate that every entry is preserved. Run
 `python -m pytest tests/test_maintenance_history.py -q` in `backend`.
 
+## Fleet Utilization Summary (REP-1A)
+
+Staff can open `http://localhost:3000/staff/reports` (linked from `/staff`), enter the staff API key, and choose a date range to see how much of the fleet was rented.
+
+- `GET /staff/reports/utilization?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD` requires `X-Staff-Key`.
+- Utilization = booked days / days in the period. The period is inclusive of both dates; a reservation counts the nights from pickup up to (not including) return, matching billing.
+- Only confirmed reservations count. Cancelled bookings (USER-3) are excluded and modified bookings (USER-7) use their current dates.
+- Reservations that cross the period boundary are clipped, so utilization never exceeds 100%.
+- Results include fleet totals, a per-category breakdown, and per-vehicle rows sorted busiest first. Archived vehicles are excluded unless `include_archived=true`.
+- With no dates, the report covers the last 30 days. Periods longer than 366 days are rejected.
+
+The endpoint only reads the existing `vehicle` and `reservation` tables; it adds no new tables.
+
 ## Tests
 
 ```sh

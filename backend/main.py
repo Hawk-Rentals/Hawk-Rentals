@@ -78,6 +78,8 @@ def migrate_existing_database() -> None:
 app = FastAPI(lifespan=lifespan)
 # REP-2B models are registered before startup creates SQLite tables.
 from vehicle_maintenance import register_maintenance_routes
+# REP-1A: fleet utilization summary (read-only, adds no tables).
+from fleet_utilization import register_utilization_routes
 
 app.add_middleware(
     CORSMiddleware,
@@ -96,6 +98,7 @@ def require_staff(x_staff_key: str | None = Header(default=None, alias="X-Staff-
 
 
 register_maintenance_routes(app, lambda: engine, require_staff)
+register_utilization_routes(app, lambda: engine, require_staff)
 
 @app.get("/health")
 def health():
