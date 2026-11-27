@@ -121,6 +121,7 @@ export default function StaffFleetPage() {
       <h1>Staff Fleet Management</h1>
       <p>Add vehicles, update listing details, or archive vehicles from the customer catalog.</p>
       <p><a href="/staff/maintenance">Open vehicle maintenance history →</a></p>
+      <p><a href="/staff/reports">Open fleet utilization summary →</a></p>
 
       <section style={styles.panel}>
         <h2>Staff authorization</h2>
