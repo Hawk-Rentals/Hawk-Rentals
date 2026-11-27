@@ -96,9 +96,11 @@ Users can remove stored booking credentials without cancelling the booking.
 A different browser or device needs the access code entered again.
 
 The page shows the vehicle, dates, customer, status (upcoming, in progress,
-completed, cancelled), and original booking cost estimate where known.
-New bookings snapshot the daily rate when reserved; later price edits or
-vehicle archiving do not retroactively change the estimate. Historical
+completed, cancelled), and booking cost estimate where known.
+New bookings snapshot the daily rate when reserved. A date change recalculates
+the estimate using the saved rate, and a vehicle change snapshots the new
+vehicle's current rate. Staff price edits and vehicle archiving do not change
+saved rates. Historical
 bookings without a price snapshot display "Not recorded" instead of
 inventing a rate. No payment or refund status is asserted by the estimate.
 Bookings made before private access codes were introduced cannot be
@@ -117,6 +119,15 @@ imported without a secure account-recovery mechanism.
 
 Run `python -m pytest tests/test_rental_history.py -q` from the backend
 directory to run USER-6's automated API tests.
+
+## Modify a reservation (USER-7)
+
+Open **My booking** (`/reservations`) and enter the booking number and private
+access code. For an upcoming confirmed booking, select **Edit reservation**,
+change the dates, vehicle, or customer name, and re-enter the driver's licence
+details. **Save changes** checks availability and displays the updated
+confirmation. Customers keep the same booking number and access code. If a
+change is rejected, the saved booking stays intact.
 
 ## Tests
 

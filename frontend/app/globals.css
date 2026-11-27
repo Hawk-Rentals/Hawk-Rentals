@@ -13,6 +13,7 @@
 .booking-details { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px 0; border-block: 1px solid var(--line); }
 .booking-details dt { color: var(--muted); font-size: 12px; }
 .booking-details dd { margin: 4px 0 0; font-weight: 600; }
+.booking-edit-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; border: 0; margin: 0; padding: 0; min-width: 0; }
 .danger-button { background: #923d32; color: white; }
 .danger-button:hover { background: #753027; }
 .secondary-button { background: #edf0e7; }
@@ -27,6 +28,7 @@
 .text-link { text-decoration: underline; }
 @media (max-width: 650px) {
  .booking-lookup { grid-template-columns: 1fr; }
+ .booking-edit-fields { grid-template-columns: 1fr; }
  .booking-card { padding: 20px; }
  .manage-page h1 { font-size: 38px; }
  .site-header { flex-wrap: wrap; gap: 14px; }

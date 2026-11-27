@@ -65,6 +65,67 @@ def test_creates_reservation(client, dates):
     assert "driver_license_number" not in response.json()
 
 
+def test_edit_keeps_booking_identity_and_releases_original_vehicle(client, dates):
+    original = booking(dates)
+    created = client.post("/reservations", json=original).json()
+    path = f"/reservations/{created['id']}"
+    headers = {"X-Booking-Token": created["management_token"]}
+    _, end = dates
+    updated = {**original, "end_date": (end + timedelta(days=2)).isoformat()}
+    assert client.patch(
+        "/vehicles/1", headers={"X-Staff-Key": "test-staff-key"}, json={"daily_rate": 75}
+    ).status_code == 200
+
+    # A date extension can overlap the reservation being edited.
+    assert client.put(path, headers=headers, json=updated).status_code == 200
+    assert client.get(f"{path}/history", headers=headers).json()["original_total"] == 275
+
+    updated.update(vehicle_id=2, customer_name="  Taylor Morgan  ")
+    response = client.put(path, headers=headers, json=updated)
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": created["id"], "status": "confirmed", "vehicle_id": 2,
+        "customer_name": "Taylor Morgan", "start_date": updated["start_date"],
+        "end_date": updated["end_date"],
+    }
+    assert client.get(path, headers=headers).json() == response.json()
+    assert client.get(f"{path}/history", headers=headers).json()["original_total"] == 300
+    assert client.post("/reservations", json=original).status_code == 201
+    assert client.post("/reservations", json=updated).status_code == 409
+
+
+def test_rejected_edits_preserve_original_booking(client, dates):
+    original = booking(dates)
+    created = client.post("/reservations", json=original).json()
+    path = f"/reservations/{created['id']}"
+    headers = {"X-Booking-Token": created["management_token"]}
+    saved = client.get(path, headers=headers).json()
+    conflict = {**original, "vehicle_id": 2}
+    other = client.post("/reservations", json=conflict).json()
+    wrong_headers = {"X-Booking-Token": other["management_token"]}
+
+    assert client.put(path, headers=wrong_headers, json=conflict).status_code == 404
+    assert client.put(path, headers=headers, json=conflict).status_code == 409
+    for change in (
+        {"start_date": original["end_date"]},
+        {"start_date": date.today().isoformat()},
+        {"driver_license_expiry": original["start_date"]},
+    ):
+        assert client.put(path, headers=headers, json={**original, **change}).status_code == 400
+    assert client.get(path, headers=headers).json() == saved
+
+    assert client.post(f"{path}/cancel", headers=headers).status_code == 200
+    assert client.put(path, headers=headers, json=original).status_code == 409
+
+
+def test_booking_that_has_started_cannot_be_moved(client, dates):
+    upcoming = booking(dates)
+    started = {**upcoming, "start_date": date.today().isoformat()}
+    created = client.post("/reservations", json=started).json()
+    headers = {"X-Booking-Token": created["management_token"]}
+    assert client.put(f"/reservations/{created['id']}", headers=headers, json=upcoming).status_code == 409
+
+
 def test_rejects_overlapping_booking(client, dates):
     vehicle_id = add_vehicle(client)
     payload = booking(dates, vehicle_id=vehicle_id)

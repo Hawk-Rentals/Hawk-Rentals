@@ -182,14 +182,14 @@ export default function RentalHistoryPage() {
                 <div><dt>Customer</dt><dd>{item.customer_name}</dd></div>
                 <div><dt>Pickup</dt><dd>{dateLabel(item.start_date)}</dd></div>
                 <div><dt>Return</dt><dd>{dateLabel(item.end_date)}</dd></div>
-                <div><dt>Original booking estimate</dt>
+                <div><dt>Booking estimate</dt>
                   <dd>{item.original_total == null ? "Not recorded" : money(item.original_total)}</dd>
                 </div>
               </dl>
               <p className="history-note">
                 {item.rental_state === "cancelled"
-                  ? "Cancelled booking. The original estimate is not an amount charged or refunded."
-                  : "Estimated original rental cost only; payments and refunds are not supported."}
+                  ? "Cancelled booking. This estimate does not represent a charge or refund."
+                  : "Estimated rental cost. Payments and refunds are not supported."}
               </p>
               <div className="history-actions">
                 {item.rental_state === "upcoming" && <Link className="text-link" href="/reservations">

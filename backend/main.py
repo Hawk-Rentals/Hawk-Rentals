@@ -228,8 +228,7 @@ def archive_vehicle(vehicle_id: int):
         return vehicle
 
 
-@app.post("/reservations", response_model=ReservationConfirmation, status_code=201)
-def create_reservation(request: ReservationCreate):
+def validate_reservation_details(request: ReservationCreate) -> None:
     if request.start_date >= request.end_date:
         raise HTTPException(status_code=400, detail="Return date must be after pickup date")
     if not request.customer_name.strip():
@@ -239,24 +238,35 @@ def create_reservation(request: ReservationCreate):
     if request.driver_license_expiry < request.end_date:
         raise HTTPException(status_code=400, detail="Driver's licence expires before return date")
 
+
+def require_bookable_vehicle(
+    session: Session, request: ReservationCreate, *, exclude_reservation_id: int | None = None
+) -> Vehicle:
+    vehicle = session.get(Vehicle, request.vehicle_id)
+    if vehicle is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    if vehicle.archived or not vehicle.available:
+        raise HTTPException(status_code=409, detail="Vehicle is unavailable")
+
+    conflicts = select(Reservation).where(
+        Reservation.status == "confirmed",
+        Reservation.vehicle_id == request.vehicle_id,
+        Reservation.start_date < request.end_date,
+        Reservation.end_date > request.start_date,
+    )
+    if exclude_reservation_id is not None:
+        conflicts = conflicts.where(Reservation.id != exclude_reservation_id)
+    if session.exec(conflicts).first() is not None:
+        raise HTTPException(status_code=409, detail="Vehicle already booked for these dates")
+    return vehicle
+
+
+@app.post("/reservations", response_model=ReservationConfirmation, status_code=201)
+def create_reservation(request: ReservationCreate):
+    validate_reservation_details(request)
     with Session(engine) as session:
         session.exec(text("BEGIN IMMEDIATE"))
-        vehicle = session.get(Vehicle, request.vehicle_id)
-        if vehicle is None:
-            raise HTTPException(status_code=404, detail="Vehicle not found")
-        if vehicle.archived or not vehicle.available:
-            raise HTTPException(status_code=409, detail="Vehicle is unavailable")
-
-        overlapping = session.exec(
-            select(Reservation).where(
-                Reservation.status == "confirmed",
-                Reservation.vehicle_id == request.vehicle_id,
-                Reservation.start_date < request.end_date,
-                Reservation.end_date > request.start_date,
-            )
-        ).first()
-        if overlapping is not None:
-            raise HTTPException(status_code=409, detail="Vehicle already booked for these dates")
+        vehicle = require_bookable_vehicle(session, request)
 
         management_token = secrets.token_urlsafe(32)
         reservation = Reservation(
@@ -298,6 +308,34 @@ def get_reservation(
 ):
     with Session(engine) as session:
         return find_customer_reservation(session, reservation_id, x_booking_token)
+
+
+@app.put("/reservations/{reservation_id}", response_model=ReservationRead)
+def update_reservation(
+    reservation_id: int,
+    request: ReservationCreate,
+    x_booking_token: str | None = Header(default=None, alias="X-Booking-Token"),
+):
+    with Session(engine) as session:
+        session.exec(text("BEGIN IMMEDIATE"))
+        reservation = find_customer_reservation(session, reservation_id, x_booking_token)
+        today = date.today()
+        if reservation.status != "confirmed" or reservation.start_date <= today:
+            raise HTTPException(status_code=409, detail="Only upcoming confirmed reservations can be edited.")
+        validate_reservation_details(request)
+        if request.start_date <= today:
+            raise HTTPException(status_code=400, detail="Pickup date must be after today.")
+        vehicle = require_bookable_vehicle(session, request, exclude_reservation_id=reservation_id)
+
+        if reservation.vehicle_id != request.vehicle_id:
+            reservation.booked_daily_rate = vehicle.daily_rate
+        reservation.vehicle_id = request.vehicle_id
+        reservation.customer_name = request.customer_name.strip()
+        reservation.start_date = request.start_date
+        reservation.end_date = request.end_date
+        confirmation = ReservationRead.model_validate(reservation)
+        session.commit()
+        return confirmation
 
 
 @app.get("/reservations/{reservation_id}/history", response_model=RentalHistoryRead)
