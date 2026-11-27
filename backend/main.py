@@ -76,6 +76,9 @@ def migrate_existing_database() -> None:
 
 
 app = FastAPI(lifespan=lifespan)
+# REP-2B models are registered before startup creates SQLite tables.
+from vehicle_maintenance import register_maintenance_routes
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -91,6 +94,8 @@ def require_staff(x_staff_key: str | None = Header(default=None, alias="X-Staff-
     if not x_staff_key or not secrets.compare_digest(x_staff_key, configured_key):
         raise HTTPException(status_code=401, detail="Valid staff credentials are required")
 
+
+register_maintenance_routes(app, lambda: engine, require_staff)
 
 @app.get("/health")
 def health():
