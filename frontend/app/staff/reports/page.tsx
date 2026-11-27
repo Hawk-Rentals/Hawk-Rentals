@@ -190,7 +190,13 @@ export default function FleetUtilizationPage() {
               <div style={card}>
                 <span className="eyebrow">FLEET UTILIZATION</span>
                 <p style={bigNumber}>{report.fleet.utilization_pct}%</p>
-                <span className="muted">{report.fleet.vehicle_count} vehicles in report</span>
+                {/* Archived cars are no longer part of the rentable fleet, so only call this
+                    "total fleet size" when the report contains no archived vehicles. */}
+                <span className="muted">
+                  {report.vehicles.some((row) => row.archived)
+                    ? `${report.fleet.vehicle_count} vehicles in report (includes archived)`
+                    : `Total fleet size: ${report.fleet.vehicle_count} vehicles`}
+                </span>
               </div>
               <div style={card}>
                 <span className="eyebrow">BOOKED DAYS</span>
@@ -198,9 +204,13 @@ export default function FleetUtilizationPage() {
                 <span className="muted">of {report.fleet.available_days} vehicle-days available</span>
               </div>
               <div style={card}>
-                <span className="eyebrow">IDLE VEHICLES</span>
-                <p style={bigNumber}>{report.fleet.idle_vehicle_count}</p>
-                <span className="muted">no bookings in this period</span>
+                <span className="eyebrow">ACTIVE · IDLE VEHICLES</span>
+                {/* Active = at least one booked day in the period; idle = none.
+                    The backend sends the idle count, so active is total minus idle. */}
+                <p style={bigNumber}>
+                  {report.fleet.vehicle_count - report.fleet.idle_vehicle_count} · {report.fleet.idle_vehicle_count}
+                </p>
+                <span className="muted">active (booked at least once) vs idle (no bookings)</span>
               </div>
             </div>
           </section>
