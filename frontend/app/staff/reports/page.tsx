@@ -140,7 +140,7 @@ export default function FleetUtilizationPage() {
   return (
     <main className="maintenance-page">
       <p><Link className="text-link" href="/staff">← Back to fleet management</Link></p>
-      <p className="eyebrow">STAFF REPORTS · REP-1A</p>
+      <p className="eyebrow">STAFF REPORTS · REP-1A / REP-1B</p>
       <h1>Fleet utilization summary.</h1>
       <p className="muted">
         See how much of the fleet was rented over a period. Utilization is booked days divided by
@@ -238,33 +238,39 @@ export default function FleetUtilizationPage() {
             </div>
           </section>
 
-          {/* ---- By vehicle (busiest first, sorted by the backend) ---- */}
+          {/* ---- REP-1B: Vehicle utilization rankings (backend returns busiest first) ---- */}
           <section className="maintenance-panel">
-            <h2>By vehicle</h2>
+            <h2>Vehicle utilization rankings</h2>
+            <p className="muted">
+              Vehicles are ranked from highest to lowest utilization for the selected report period.
+            </p>
             {report.vehicles.length === 0 && <p className="muted">No vehicles match this report.</p>}
-            <div className="table-scroll">
-              <table>
-                <thead>
-                  <tr><th>Vehicle</th><th>Category</th><th>Bookings</th><th>Booked days</th><th>Utilization</th></tr>
-                </thead>
-                <tbody>
-                  {report.vehicles.map((row) => (
-                    <tr key={row.vehicle_id}>
-                      <td>#{row.vehicle_id} · {row.make} {row.model}{row.archived ? " (archived)" : ""}</td>
-                      <td>{row.category}</td>
-                      <td>{row.reservation_count}</td>
-                      <td>{row.booked_days} / {row.available_days}</td>
-                      <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <UsageBar pct={row.utilization_pct} />
-                          {row.utilization_pct}%
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {report.vehicles.length > 0 && (
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr><th>Rank</th><th>Vehicle</th><th>Category</th><th>Bookings</th><th>Booked days</th><th>Utilization</th></tr>
+                  </thead>
+                  <tbody>
+                    {report.vehicles.map((row, index) => (
+                      <tr key={row.vehicle_id}>
+                        <td>{index + 1}</td>
+                        <td>#{row.vehicle_id} · {row.make} {row.model}{row.archived ? " (archived)" : ""}</td>
+                        <td>{row.category}</td>
+                        <td>{row.reservation_count}</td>
+                        <td>{row.booked_days} / {row.available_days}</td>
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <UsageBar pct={row.utilization_pct} />
+                            {row.utilization_pct}%
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
         </>
       )}
