@@ -171,6 +171,11 @@ Staff can open `http://localhost:3000/staff/reports` (linked from `/staff`), ent
 
 The endpoint only reads the existing `vehicle` and `reservation` tables; it adds no new tables.
 
+## Vehicle Utilization Rankings (REP-1B)
+
+The staff utilization report also displays a ranked vehicle table for the selected date range. Vehicles are numbered from highest to lowest utilization, with ties kept in the stable vehicle-ID order supplied by the backend. The ranking reuses the per-vehicle results from REP-1A; it does not add another endpoint or duplicate utilization calculations. Archived vehicles appear only when the report's **Include archived vehicles** option is selected.
+
+
 ## Tests
 
 ```sh
